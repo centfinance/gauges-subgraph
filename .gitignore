@@ -24,7 +24,7 @@ build/
 
 # Subgraph stuff
 src/types/
-subgraph*.yaml
+# subgraph*.yaml
 
 # Jetbrains
 .idea/

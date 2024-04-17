@@ -1,0 +1,259 @@
+specVersion: 0.0.2
+description: Liquidity Gauges of the Balancer Protocol
+repository: https://github.com/balancer-labs/gauges-subgraph/
+schema:
+  file: ./schema.graphql
+dataSources:
+  - kind: ethereum/contract
+    name: EventEmitter
+    network: optimism
+    source:
+      address: '0x082990116f256E078572a1b69772115d2cF6b0a2'
+      abi: EventEmitter
+      startBlock: 99124541
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.5
+      language: wasm/assemblyscript
+      file: ./src/eventEmitter.ts
+      entities:
+        - Pool
+      abis:
+        - name: EventEmitter
+          file: ./abis/EventEmitter.json
+        - name: ChildChainStreamer
+          file: ./abis/ChildChainStreamer.json
+        - name: ChildChainLiquidityGaugeV2
+          file: ./abis/ChildChainLiquidityGaugeV2.json
+      eventHandlers:
+        - event: LogArgument(indexed address,indexed bytes32,bytes,uint256)
+          handler: handleLogArgument
+  - kind: ethereum/contract
+    name: ChildChainLiquidityGaugeFactory
+    # prettier-ignore
+    network: optimism
+    source:
+      address: '0x2E96068b3D5B5BAE3D7515da4A1D2E52d08A2647'
+      abi: ChildChainLiquidityGaugeFactory
+      # prettier-ignore
+      startBlock: 9052485
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.5
+      language: wasm/assemblyscript
+      file: ./src/gaugeFactory.ts
+      abis:
+        - name: ChildChainLiquidityGaugeFactory
+          file: ./abis/ChildChainLiquidityGaugeFactory.json
+        - name: RewardsOnlyGauge
+          file: ./abis/RewardsOnlyGauge.json
+        - name: LiquidityGauge
+          file: ./abis/LiquidityGauge.json
+        - name: WeightedPool
+          file: ./abis/WeightedPool.json
+        - name: Vault
+          file: ./abis/Vault.json
+      entities:
+        - GaugeFactory
+        - LiquidityGauge
+      eventHandlers:
+        - event: RewardsOnlyGaugeCreated(indexed address,indexed address,address)
+          handler: handleRewardsOnlyGaugeCreated
+  - kind: ethereum/contract
+    name: ChildChainLiquidityGaugeV2Factory
+    # prettier-ignore
+    network: optimism
+    source:
+      address: '0xa523f47A933D5020b23629dDf689695AA94612Dc'
+      abi: ChildChainGaugeV2Factory
+      # prettier-ignore
+      startBlock: 83239534
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.5
+      language: wasm/assemblyscript
+      file: ./src/gaugeFactory.ts
+      abis:
+        - name: ChildChainGaugeV2Factory
+          file: ./abis/ChildChainGaugeV2Factory.json
+        - name: LiquidityGauge
+          file: ./abis/LiquidityGauge.json
+        - name: WeightedPool
+          file: ./abis/WeightedPool.json
+        - name: Vault
+          file: ./abis/Vault.json
+      entities:
+        - GaugeFactory
+        - LiquidityGauge
+      eventHandlers:
+        - event: GaugeCreated(indexed address)
+          handler: handleChildChainV2LiquidityGaugeCreated
+  - kind: ethereum/contract
+    name: AuthorizerAdaptorEntrypoint
+    # prettier-ignore
+    network: optimism
+    source:
+      address: '0xed86ff0c507D3AF5F35d3523B77C17415FCfFaCb'
+      abi: authorizerAdaptorEntrypoint
+      # prettier-ignore
+      startBlock: 41872979
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.5
+      language: wasm/assemblyscript
+      file: ./src/authorizerAdaptorEntrypoint.ts
+      abis:
+        - name: authorizerAdaptorEntrypoint
+          file: ./abis/AuthorizerAdaptorEntrypoint.json
+        - name: ChildChainStreamer
+          file: ./abis/ChildChainStreamer.json
+        - name: ChildChainLiquidityGaugeV2
+          file: ./abis/ChildChainLiquidityGaugeV2.json
+        - name: ERC20
+          file: ./abis/ERC20.json
+        - name: LiquidityGauge
+          file: ./abis/LiquidityGauge.json
+      entities:
+        - LiquidityGauge
+      eventHandlers:
+        - event: ActionPerformed(indexed bytes4,indexed address,indexed address,bytes)
+          handler: handleActionPerformed
+  - kind: ethereum/contract
+    name: OmniVotingEscrowChild
+    # prettier-ignore
+    network: optimism
+    source:
+      address: '0xE241C6e48CA045C7f631600a0f1403b2bFea05ad'
+      abi: omniVotingEscrowChild
+      # prettier-ignore
+      startBlock: 101185055
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.5
+      language: wasm/assemblyscript
+      file: ./src/voting.ts
+      abis:
+        - name: omniVotingEscrowChild
+          file: ./abis/OmniVotingEscrowChild.json
+      entities:
+        - UserVotingEscrowShare
+      eventHandlers:
+        - event: UserBalFromChain(uint16,address,(int128,int128,uint256,uint256),(int128,int128,uint256,uint256))
+          handler: handleUserBalFromChain
+templates:
+  - kind: ethereum/contract
+    name: LiquidityGauge
+    # prettier-ignore
+    network: optimism
+    source:
+      abi: LiquidityGauge
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.5
+      language: wasm/assemblyscript
+      file: ./src/gauge.ts
+      entities:
+        - LiquidityGauge
+        - UserGaugeShare
+      abis:
+        - name: ERC20
+          file: ./abis/ERC20.json
+        - name: LiquidityGauge
+          file: ./abis/LiquidityGaugeV2.json
+        - name: ChildChainLiquidityGaugeV2
+          file: ./abis/ChildChainLiquidityGaugeV2.json
+      eventHandlers:
+        - event: RelativeWeightCapChanged(uint256)
+          handler: handleRelativeWeightCapChanged
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleTransfer
+  - kind: ethereum/contract
+    name: RewardsOnlyGauge
+    # prettier-ignore
+    network: optimism
+    source:
+      abi: RewardsOnlyGauge
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.5
+      language: wasm/assemblyscript
+      file: ./src/gauge.ts
+      entities:
+        - LiquidityGauge
+        - UserGaugeShare
+      abis:
+        - name: ERC20
+          file: ./abis/ERC20.json
+        - name: RewardsOnlyGauge
+          file: ./abis/RewardsOnlyGauge.json
+        - name: LiquidityGauge
+          file: ./abis/LiquidityGauge.json
+        - name: ChildChainStreamer
+          file: ./abis/ChildChainStreamer.json
+        - name: ChildChainLiquidityGaugeV2
+          file: ./abis/ChildChainLiquidityGaugeV2.json
+      eventHandlers:
+        - event: Transfer(indexed address,indexed address,uint256)
+          handler: handleTransfer
+  - kind: ethereum/contract
+    name: ChildChainStreamer
+    # prettier-ignore
+    network: optimism
+    source:
+      abi: ChildChainStreamer
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.5
+      language: wasm/assemblyscript
+      file: ./src/gauge.ts
+      entities:
+        - LiquidityGauge
+        - RewardToken
+      abis:
+        - name: ERC20
+          file: ./abis/ERC20.json
+        - name: ChildChainStreamer
+          file: ./abis/ChildChainStreamer.json
+        - name: ChildChainLiquidityGaugeV2
+          file: ./abis/ChildChainLiquidityGaugeV2.json
+      eventHandlers:
+        - event: RewardDurationUpdated(indexed address,uint256)
+          handler: handleRewardDurationUpdated
+  - kind: ethereum/contract
+    name: RootGauge
+    # prettier-ignore
+    network: optimism
+    source:
+      abi: ArbitrumRootGauge
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.5
+      language: wasm/assemblyscript
+      file: ./src/gauge.ts
+      entities:
+        - RootGauge
+      abis:
+        - name: ArbitrumRootGauge
+          file: ./abis/ArbitrumRootGaugeV2.json
+      eventHandlers:
+        - event: RelativeWeightCapChanged(uint256)
+          handler: handleRootGaugeRelativeWeightCapChanged
+  - kind: ethereum/contract
+    name: SingleRecipientGauge
+    # prettier-ignore
+    network: optimism
+    source:
+      abi: ArbitrumRootGauge
+    mapping:
+      kind: ethereum/events
+      apiVersion: 0.0.5
+      language: wasm/assemblyscript
+      file: ./src/gauge.ts
+      entities:
+        - SingleRecipientGauge
+      abis:
+        - name: ArbitrumRootGauge # share the same events
+          file: ./abis/ArbitrumRootGaugeV2.json
+      eventHandlers:
+        - event: RelativeWeightCapChanged(uint256)
+          handler: handleSingleRecipientGaugeRelativeWeightCapChanged
